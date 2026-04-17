@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: bigdata-lab2-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pet_store_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./sql/import.sql:/docker-entrypoint-initdb.d/01_import.sql
+      - ./sql/ddl.sql:/docker-entrypoint-initdb.d/02_ddl.sql
+      - "./исходные данные:/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d pet_store_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: bigdata-lab2-clickhouse
+    restart: always
+    environment:
+      CLICKHOUSE_DB: reports_db
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: password
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  spark:
+    image: jupyter/pyspark-notebook:latest
+    container_name: bigdata-lab2-spark
+    ports:
+      - "8888:8888"
+      - "4040:4040"
+    volumes:
+      - .:/home/jovyan/work
+    environment:
+      - JUPYTER_TOKEN=
+      - PYTHONPATH=/usr/local/spark/python:/usr/local/spark/python/lib/py4j-0.10.9.7-src.zip
+    depends_on:
+      db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    command: >
+      bash -c "
+      jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=-1 --ExecutePreprocessor.kernel_name=python3 /home/jovyan/work/python/main.ipynb
+      &&
+      start-notebook.sh"
