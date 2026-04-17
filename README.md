@@ -61,7 +61,7 @@ git clone https://github.com/EgorTarasov1/BigDataSpark.git
 2) Переходите в папку проекта:
 
 ```bash
-cd BDSnowflake
+cd BigDataSpark
 ```
 
 3) Поднимаете базу данных PostgreSQL, Spark и ClickHouse при помощи docker:
