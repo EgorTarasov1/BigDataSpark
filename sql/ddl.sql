@@ -45,8 +45,7 @@ create table dim_products (
     brand text,
     price decimal(12, 2),
     product_category text,
-    pet_category text,
-    supplier_id int references dim_suppliers(supplier_id)
+    pet_category text
 );
 
 
